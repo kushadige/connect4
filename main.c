@@ -11,7 +11,7 @@
 #endif
 
 #define GAME_BOARD "tahta.txt"
-#define GAME_RECORDS "hamle.txt"
+#define GAME_RECORDS "hamle.bin"
 
 // ################ CURSOR CONTROLS ################
 #define cursorup(x) printf("\033[%dA", (x))
@@ -369,7 +369,7 @@ void save_game() {
     int total = 0;
     Game* file_data;
     
-    file_data = read_data("hamle.bin", &total);
+    file_data = read_data(GAME_RECORDS, &total);
 
     if(file_data == NULL) {
         for(int i = 0; i < 4; i++) {
@@ -395,10 +395,10 @@ void save_game() {
             if(intersect_control) {
                 printf(
                     "    +------------------------------+\n"
-                    "    |game id: %d|\n"
-                    "    |%s|\n"
+                    "    |%10sgame id: %d%10s|\n"
+                    "    |%3s%s%3s|\n"
                     "    |                              |\n"
-                    "    +------------------------------+\n", file_data[j].game_id, file_data[j].record_time
+                    "    +------------------------------+\n", " ", file_data[j].game_id, " ", " ", file_data[j].record_time, " "
                 );
             } else {
                 printf(
@@ -414,7 +414,7 @@ void save_game() {
         free(file_data);
     }
 
-    printf("\n\n...press esc to cancel");
+    printf("\n\n    ...press esc to cancel");
 
     gotoxy(0, 3);
     printf("->");
@@ -455,7 +455,7 @@ void save_game() {
                 printf("\nsaving...");
                 Sleep(150);
 
-                file_data = read_data("hamle.bin", &total);
+                file_data = read_data(GAME_RECORDS, &total);
 
                 Game rec_game;
                 rec_game.game_id = cursor_state;
@@ -470,7 +470,7 @@ void save_game() {
                 }
 
                 if(file_data == NULL) {
-                    if(write_data("hamle.bin", &rec_game, 1)) {
+                    if(write_data(GAME_RECORDS, &rec_game, 1)) {
                         printf("Write data OK.\n");
                         Sleep(1000);
                     } else {
@@ -491,7 +491,7 @@ void save_game() {
 
                     if(is_overwrite) {
                         // update record
-                        if(update_data("hamle.bin", &rec_game, cursor_state_position_in_file)) {
+                        if(update_data(GAME_RECORDS, &rec_game, cursor_state_position_in_file)) {
                             printf("Update data OK.\n");
                             Sleep(1000);
                         } else {
@@ -500,7 +500,7 @@ void save_game() {
                         }
                     } else {
                         // append record
-                        if(append_data("hamle.bin", &rec_game, total + 1)) {
+                        if(append_data(GAME_RECORDS, &rec_game, total + 1)) {
                             printf("Append data OK.\n");
                             Sleep(1000);
                         } else {
@@ -521,7 +521,7 @@ void load_game(int* control) {
     int total = 0;
     Game* file_data;
     
-    file_data = read_data("hamle.bin", &total);
+    file_data = read_data(GAME_RECORDS, &total);
 
     if(file_data == NULL) {
         printf(
@@ -536,17 +536,17 @@ void load_game(int* control) {
         for(int i = 0; i < total; i++) {
             printf(
                 "    +------------------------------+\n"
-                "    |game id: %d|\n"
-                "    |%s|\n"
+                "    |%10sgame id: %d%10s|\n"
+                "    |%3s%s%3s|\n"
                 "    |                              |\n"
-                "    +------------------------------+\n", file_data[i].game_id, file_data[i].record_time
+                "    +------------------------------+\n", " ", file_data[i].game_id, " ", " ", file_data[i].record_time, " "
             );
         }
 
         free(file_data);
     }
 
-    printf("\n\n...press esc to cancel");
+    printf("\n\n    ...press esc to cancel");
 
     gotoxy(0, 3);
     printf("->");
@@ -592,7 +592,7 @@ void load_game(int* control) {
                 printf("\nloading...");
                 Sleep(250);
 
-                file_data = read_data("hamle.bin", &total);
+                file_data = read_data(GAME_RECORDS, &total);
 
                 // copy game board from file to active_game board
                 for(int i = 0; i < 21; i++) {
