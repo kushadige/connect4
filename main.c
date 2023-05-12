@@ -745,3 +745,7 @@ int wherey() {
 // X' ve Y'lere yanıp sönme efekti
 
 // Load game'de aktif oyuncu bilgisinin doğru getirilmesi
+
+// Oyun algoritması kazanan kaybeden berabere durumları
+
+// Oyuncu pullarını renkli toplar şeklinde ayarlamak
