@@ -43,6 +43,7 @@ typedef enum {
 } player;
 typedef struct {
     int game_id;
+    int last_player;
     char record_time[30];
     char active_board[21][40];
 } Game;
@@ -261,10 +262,19 @@ void print_game_board(int continue_game) {
     int selected_option;
 
     gotoxy(5, 0);
-    printf("X");
+
+
+    int current_player;
+    if(!continue_game) {
+        printf("X");
+        current_player = 0;
+    } else {
+        printf(active_game.last_player == PLAYER1 ? "X" : "Y");
+        current_player = active_game.last_player == PLAYER1 ? 0 : 1;
+    }
     cursorbackward(1);
 
-    int current_player = 0;
+    
     int is_the_move_valid = 0;
 
     while(1 && key_input != -1) {
@@ -313,6 +323,7 @@ void print_game_board(int continue_game) {
                 if(is_the_move_valid) {
 
                     current_player = current_player == 0 ? 1 : 0;
+                    active_game.last_player = current_player;
 
                     if(current_player == 0) {
                         gotoxy(5, 0);
@@ -459,6 +470,7 @@ void save_game() {
 
                 Game rec_game;
                 rec_game.game_id = cursor_state;
+                rec_game.last_player = active_game.last_player;
                 
                 char* foo = get_current_time();;
                 foo[strlen(foo) - 1] = 0;
@@ -598,6 +610,7 @@ void load_game(int* control) {
                 for(int i = 0; i < 21; i++) {
                     strcpy(active_game.active_board[i], file_data[cursor_state].active_board[i]);
                 }
+                active_game.last_player = file_data[cursor_state].last_player;
 
                 *control = 1;
                 free(file_data);
