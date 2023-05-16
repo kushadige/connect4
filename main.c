@@ -21,6 +21,7 @@
 #define gotoxy(x, y) printf("\033[%d;%dH", (y), (x))
 #define savecursor() printf("\033[s")
 #define restorecursor() printf("\033[u")
+#define erase_line() printf("\033[K");
 #define board_left() printf("\033[4D")
 #define board_right() printf("\033[4C")
 #define board_up() printf("\033[2A")
@@ -41,6 +42,11 @@ typedef enum {
     PLAYER1,
     PLAYER2
 } player;
+typedef enum {
+    WIN,
+    DRAW,
+    CONTINUE
+} game_status;
 typedef struct {
     int game_id;
     int last_player;
@@ -66,8 +72,11 @@ void load_game(int* control);
 void print_game_board(int continue_game);
 int slide_the_ball(player x, int col, char active_board[21][40]);
 void save_game();
+game_status check_game_status(int moves);
+void game_over(game_status gs);
 
 Game active_game;
+int last_move_i, last_move_j;
 
 // ################ MAIN ################
 int main() {
@@ -276,6 +285,8 @@ void print_game_board(int continue_game) {
 
     
     int is_the_move_valid = 0;
+    int moves = 0;
+    game_status gs;
 
     while(1 && key_input != -1) {
 
@@ -321,29 +332,43 @@ void print_game_board(int continue_game) {
                 }
 
                 if(is_the_move_valid) {
+                    // check win lose or draw statements after each move.
+                    moves++;
+                    gs = check_game_status(moves);
+                    switch(gs) {
+                        case WIN:
+                            key_input = -1;
+                            // clear_screen();
+                            game_over(WIN);
+                            break;
+                        case DRAW:
+                            key_input = -1;
+                            // clear_screen();
+                            game_over(DRAW);
+                            break;
+                        default:
+                            current_player = current_player == 0 ? 1 : 0;
+                            active_game.last_player = current_player;
 
-                    current_player = current_player == 0 ? 1 : 0;
-                    active_game.last_player = current_player;
+                            if(current_player == 0) {
+                                gotoxy(5, 0);
+                                cursor_state_x = 5; 
+                                printf("X");
+                            } else {
+                                gotoxy(37, 0);
+                                cursor_state_x = 37; 
+                                printf("Y");
+                            }
 
-                    if(current_player == 0) {
-                        gotoxy(5, 0);
-                        cursor_state_x = 5; 
-                        printf("X");
-                    } else {
-                        gotoxy(37, 0);
-                        cursor_state_x = 37; 
-                        printf("Y");
+                            cursorbackward(1);
+                            break;
                     }
-
-                    cursorbackward(1);
                 }
-
                 break;
             default:
                 break;
         }
     }
-
 }
 int slide_the_ball(player x, int col, char active_board[21][40]) {
 
@@ -371,6 +396,8 @@ int slide_the_ball(player x, int col, char active_board[21][40]) {
 
     if(i != 0) {
         active_board[2 + (i-1)*2][col] = active_ball;
+        last_move_i = 2 + (i-1)*2;
+        last_move_j = col;
         return 1;
     } else {
         return 0;
@@ -620,6 +647,81 @@ void load_game(int* control) {
         }
     }
 }
+game_status check_game_status(int moves) {
+    if(moves == 81) {
+        return DRAW;
+    }
+
+    int is_path_finded = 0;
+    int connected_nodes = 0;
+    char last_move = active_game.active_board[last_move_i][last_move_j];
+
+    // check horizontal locations
+    for(int i = 0; i < 9; i++) { 
+        for(int j = 0; j < 6; j++) {  // 6 meant col_count - 3
+            if( active_game.active_board[2 + i*2][4 + j*4] == last_move && 
+                active_game.active_board[2 + i*2][4 + (j+1)*4] == last_move && 
+                active_game.active_board[2 + i*2][4 + (j+2)*4] == last_move && 
+                active_game.active_board[2 + i*2][4 + (j+3)*4] == last_move ) {
+                    return WIN;
+                }
+        }
+    }
+
+    // check horizontal locations
+    for(int i = 0; i < 9; i++) {      
+        for(int j = 0; j < 6; j++) {    // 6 meant row_count - 3
+            if( active_game.active_board[2 + j*2][4 + i*4] == last_move && 
+                active_game.active_board[2 + (j+1)*2][4 + i*4] == last_move && 
+                active_game.active_board[2 + (j+2)*2][4 + i*4] == last_move && 
+                active_game.active_board[2 + (j+3)*2][4 + i*4] == last_move ) {
+                    return WIN;
+                }
+        }
+    }
+
+    // check diagonal locations (bottom to up - right)
+    for(int i = 8; i > 2; i--) {      
+        for(int j = 0; j < 6; j++) {    
+            if( active_game.active_board[2 + i*2][4 + j*4] == last_move && 
+                active_game.active_board[2 + (i-1)*2][4 + (j+1)*4] == last_move && 
+                active_game.active_board[2 + (i-2)*2][4 + (j+2)*4] == last_move && 
+                active_game.active_board[2 + (i-3)*2][4 + (j+3)*4] == last_move ) {
+                    return WIN;
+                }
+        }
+    }
+
+    // check diagonal locations (bottom to up - left)
+    for(int i = 8; i > 2; i--) {      
+        for(int j = 8; j > 2; j--) {    
+            if( active_game.active_board[2 + i*2][4 + j*4] == last_move && 
+                active_game.active_board[2 + (i-1)*2][4 + (j-1)*4] == last_move && 
+                active_game.active_board[2 + (i-2)*2][4 + (j-2)*4] == last_move && 
+                active_game.active_board[2 + (i-3)*2][4 + (j-3)*4] == last_move ) {
+                    return WIN;
+                }
+        }
+    }
+
+    return CONTINUE;
+}
+void game_over(game_status gs) {
+    switch(gs) {
+        case WIN:
+            gotoxy(0, 24);
+            erase_line();
+            printf("WON Player%d!\n", active_game.last_player + 1);
+            break;
+        case DRAW:
+            gotoxy(0, 24);
+            erase_line();
+            printf("DRAW!\n");
+            break;
+        default:
+            break;
+    }
+}
 
 // ################ UTIL FUNCTION DECLERATIONS ################
 int compare_string(char *first, char *second) {
@@ -757,8 +859,10 @@ int wherey() {
 
 // X' ve Y'lere yanıp sönme efekti
 
-// Load game'de aktif oyuncu bilgisinin doğru getirilmesi
+// Load game'de aktif oyuncu bilgisinin doğru getirilmesi - TAMAMLANDI
 
-// Oyun algoritması kazanan kaybeden berabere durumları
+// Oyun algoritması kazanan kaybeden berabere durumları   - TAMAMLANDI
 
 // Oyuncu pullarını renkli toplar şeklinde ayarlamak
+
+// Delete saved game functionality
